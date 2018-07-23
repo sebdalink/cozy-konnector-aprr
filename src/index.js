@@ -6,12 +6,16 @@ const {
   saveBills,
   log
 } = require('cozy-konnector-libs')
+
+const moment = require('moment')
+moment.locale('fr')
+
 const request = requestFactory({
   cheerio: true,
   json: false,
   // this allows request-promise to keep cookies between requests
   jar: true,
-  debug: true
+  debug: false
 })
 
 const baseUrl = 'https://espaceclient.aprr.fr/aprr/Pages'
@@ -26,47 +30,31 @@ async function start(fields) {
   log('info', 'Successfully logged in')
   // The BaseKonnector instance expects a Promise as return of the function
 
+  log('info', 'Fetching the list of documents')
+  const $ = await request(billUrl)
+  log('info', 'Parsing list of documents')
+  const bills = await parseDocuments($)
 }
 
-async function authenticate(username, password) {
-  let loginPage
-  try {
-    loginPage = await request({
-      url: loginUrl,
-      gzip: true,
-      headers: {
-        'Accept-language': 'fr'
-      }
-    })
-  } catch (error) {
-    log('info', JSON.stringify(error.error))
-    throw new Error(error.VENDOR_DOWN)
-  }
-
-  const hiddenFields = {}
-  loginPage('input[type="hidden"]').each(function(i, elt) {
-    hiddenFields[elt.attribs.name] = elt.attribs.value
-  })
-
-  const formFields = {
-    ...hiddenFields,
-    ctl00$PlaceHolderMain$TextBoxLogin: username,
-    ctl00$PlaceHolderMain$TextBoxPass: password,
-    'ctl00$PlaceHolderMain$ImageButtonConnection.x': 54,
-    'ctl00$PlaceHolderMain$ImageButtonConnection.y': 12
-  }
-
-  // let $ = await request({
-  //   url: loginUrl,
-  //   method: 'POST',
-  //   form: formFields
-  // })
-
-  // log('info', login)
+function authenticate(username, password) {
   return signin({
     url: loginUrl,
     formSelector: 'form',
-    formData: formFields,
+    formData: $ => {
+      const hiddenFields = {}
+      $('input[type="hidden"]').each(function(i, elt) {
+        hiddenFields[elt.attribs.name] = elt.attribs.value
+      })
+      return {
+        ...hiddenFields,
+        ctl00$PlaceHolderMain$TextBoxLogin: username,
+        ctl00$PlaceHolderMain$TextBoxPass: password,
+        'ctl00$PlaceHolderMain$ImageButtonConnection.x': 54,
+        'ctl00$PlaceHolderMain$ImageButtonConnection.y': 12
+      }
+    },
+    json: false,
+    simple: false,
     // the validate function will check if
     validate: (statusCode, $) => {
       if ($("#ctl00_plhCustomerArea_customerArea_LinkButtonSeDeconnecter").length === 1) {
@@ -76,4 +64,23 @@ async function authenticate(username, password) {
       }
     }
   })
+}
+
+function parseDocuments($) {
+  const docs = scrape(
+    $,
+    {
+      billId: 'td.first',
+      amount: {
+        sel: 'td.column3',
+        parse: amount => parseFloat(amount.replace(' €', '').replace(',', '.'))
+      },
+      date: {
+        sel: 'td.column2',
+        parse: date => moment(date, 'MMM YYYY').toDate()
+      }
+    },
+    '.tbl_factures tbody tr'
+  )
+  log('info', docs)
 }
