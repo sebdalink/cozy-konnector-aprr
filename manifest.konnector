@@ -1,14 +1,14 @@
 {
   "version": "1.0.0",
-  "name": "Connector template",
+  "name": "APRR",
   "type": "konnector",
   "language": "node",
   "icon": "icon.png",
-  "slug": "template",
-  "source": "git://github.com/konnectors/cozy-konnector-template.git",
+  "slug": "aprr",
+  "source": "git://github.com/sebdalink/cozy-konnector-aprr.git",
   "editor": "Cozy",
-  "vendor_link": "Link to the target website",
-  "categories": ["other"],
+  "vendor_link": "http://www.aprr.fr/fr",
+  "categories": ["transport"],
   "fields": {
     "login": {
       "type": "text"
@@ -43,14 +43,14 @@
     }
   },
   "developer": {
-    "name": "Cozy Cloud",
-    "url": "https://cozy.io"
+    "name": "Sébastien Duval (@sebdalink)",
+    "url": "https://github.com/sebdalink"
   },
   "langs": ["fr", "en"],
   "locales": {
     "fr": {
-      "short_description": "Template de connecteur",
-      "long_description": "Ce template récupère une liste de livres sur un site de scraping",
+      "short_description": "Récupère vos données des télépéages APRR",
+      "long_description": "Ce connecteur récupère vos données des télépéages APRR",
       "permissions": {
         "bank operations": {
           "description": "Utilisé pour relier les factures à des operations bancaires"
@@ -67,8 +67,8 @@
       }
     },
     "en": {
-      "short_description": "Connector template",
-      "long_description": "This template fetches a list of books from a scraping website",
+      "short_description": "Fetches your data from APRR toll system",
+      "long_description": "This connector fetches bills from APRR toll system",
       "permissions": {
         "bank operations": {
           "description": "Required to link bank operations to bills"

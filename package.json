@@ -1,13 +1,13 @@
 {
-  "name": "cozy-konnector-template",
+  "name": "cozy-konnector-aprr",
   "version": "1.0.0",
   "description": "",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/konnectors/cozy-konnector-template.git"
+    "url": "git+https://github.com/sebdalink/cozy-konnector-aprr.git"
   },
   "keywords": [],
-  "author": "Cozy Cloud",
+  "author": "sebdalink",
   "license": "AGPL-3.0",
   "main": "./src/index.js",
   "eslintConfig": {
