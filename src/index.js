@@ -4,7 +4,9 @@ const {
   signin,
   scrape,
   saveBills,
-  log
+  log,
+  hydrateAndFilter,
+  addData
 } = require('cozy-konnector-libs')
 
 const moment = require('moment')
@@ -18,9 +20,10 @@ const request = requestFactory({
   debug: false
 })
 
-const baseUrl = 'https://espaceclient.aprr.fr/aprr/Pages'
-const loginUrl = baseUrl + '/connexion.aspx'
-const billUrl = baseUrl + '/MaConsommation/conso_factures.aspx'
+const baseUrl = 'https://espaceclient.aprr.fr/aprr'
+const loginUrl = baseUrl + '/Pages/connexion.aspx'
+const billUrl = baseUrl + '/Pages/MaConsommation/conso_factures.aspx'
+const consumptionUrl = baseUrl + '/_LAYOUTS/APRR-EDGAR/GetTrajets.aspx'
 
 module.exports = new BaseKonnector(start)
 
@@ -28,15 +31,29 @@ async function start(fields) {
   log('info', 'Authenticating ...')
   await authenticate(fields.login, fields.password)
   log('info', 'Successfully logged in')
-  // The BaseKonnector instance expects a Promise as return of the function
 
-  log('info', 'Fetching the list of documents')
-  const $ = await request(billUrl)
-  log('info', 'Parsing list of documents')
-  const bills = await parseDocuments($)
+  log('info', 'Fetching the list of bills')
+  let $ = await request(billUrl)
+
+  log('info', 'Parsing bills')
+  const bills = parseBills($)
+  log('info', 'Saving data to Cozy')
+  await saveBills(bills, fields.folderPath, {
+    identifiers: [
+      'aprr'
+    ],
+    contentType: 'application/pdf'
+  })
+
+  log('info', 'Fetching the list of consumptions')
+  $ = await fetchConsumptions(consumptionUrl)
+
+  log('info', 'Parsing consumptions')
+  const consumptions = parseConsumptions($)
+  await saveConsumptions(consumptions)
 }
 
-function authenticate(username, password) {
+async function authenticate(username, password) {
   return signin({
     url: loginUrl,
     formSelector: 'form',
@@ -55,7 +72,7 @@ function authenticate(username, password) {
     },
     json: false,
     simple: false,
-    // the validate function will check if
+    // the validate function will check if user is logged
     validate: (statusCode, $) => {
       if ($("#ctl00_plhCustomerArea_customerArea_LinkButtonSeDeconnecter").length === 1) {
         return true
@@ -66,21 +83,83 @@ function authenticate(username, password) {
   })
 }
 
-function parseDocuments($) {
-  const docs = scrape(
+function parseBills($) {
+  const bills = scrape(
     $,
     {
-      billId: 'td.first',
+      id: 'td.first',
       amount: {
         sel: 'td.column3',
         parse: amount => parseFloat(amount.replace(' €', '').replace(',', '.'))
       },
       date: {
         sel: 'td.column2',
-        parse: date => moment(date, 'MMM YYYY').toDate()
-      }
+        parse: date => moment(date, 'MMM YYYY').add(moment().utcOffset(), 'm')
+      },
     },
     '.tbl_factures tbody tr'
   )
-  log('info', docs)
+
+  return bills.map(bill => ({
+    ...bill,
+    vendor: 'aprr',
+    currency: '€',
+    fileurl: `${billUrl}?facture=${bill.id}`,
+    filename: `${bill.date.format('YYYY-MM')}_${String(bill.amount).replace('.', ',')}€_${String(bill.id)}.pdf`,
+    date: bill.date.toDate(),
+    metadata: {
+      // it can be interesting that we add the date of import. This is not mandatory but may be
+      // usefull for debugging or data migration
+      importDate: new Date(),
+      // document version, usefull for migration after change of document structure
+      version: 1
+    }
+  }))
+}
+
+async function fetchConsumptions(consumptionUrl) {
+  const requestJSON = requestFactory({
+    cheerio: false,
+    json: true,
+    jar: true
+  })
+
+  return await requestJSON({
+    uri: consumptionUrl,
+    method: 'POST',
+    body: {
+      startIndex:"1",
+      itemsCountInPage:"101"
+    },
+    json: true,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+}
+
+function parseConsumptions(consumptions) {
+  return consumptions.map(consumption => {
+    return {
+      badgeNumber: consumption.NumeroSupport,
+      date: moment(consumption.Date, 'DD/MM/YYYY').toDate(),
+      inPlace: consumption.GareEntreeLibelle,
+      outPlace: consumption.GareSortieLibelle,
+      amount: parseFloat(consumption.MontantHorsRemiseTTC.replace(' €', '').replace(',', '.')),
+      currency: '€',
+      metadata: {
+        dateImport: new Date(),
+        vendor: 'aprr',
+        version: 1
+      }
+    }
+  } )
+
+}
+
+function saveConsumptions(consumptions) {
+  const DOCTYPE = 'io.cozy.aprr.consumptions'
+  return hydrateAndFilter(consumptions, DOCTYPE, {
+    keys: ['badgeNumber', 'date', 'inPlace', 'outPlace']
+  }).then(entries => addData(entries, DOCTYPE))
 }
