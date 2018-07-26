@@ -1,4 +1,4 @@
-[Cozy][cozy] <YOUR SUPER NEW KONNECTOR NAME>
+[Cozy][cozy] APRR
 =======================================
 
 What's Cozy?
@@ -11,8 +11,8 @@ What's Cozy?
 What is this konnector about ?
 ------------------------------
 
-This konnector retrieves your <SOME DATA> and <SOME OTHER DATA> from <SERVICE>
-<YOUR DESCRIPTION HERE>
+This konnector retrieves your bills and consumptions from APRR toll system
+
 
 ### Open a Pull-Request
 
@@ -45,7 +45,7 @@ This connector uses [cozy-konnector-libs](https://github.com/cozy/cozy-konnector
 
 ### Maintainer
 
-The lead maintainers for this konnector is <YOUR NAME>
+The lead maintainers for this konnector are @sebdalink and @doubleface
 
 
 ### Get in touch
@@ -62,7 +62,7 @@ You can reach the Cozy Community by:
 License
 -------
 
-<YOUR KONNECTOR NAME> is developed by <your name> and distributed under the [AGPL v3 license][agpl-3.0].
+APPR is developed by @sebdalink and distributed under the [AGPL v3 license][agpl-3.0].
 
 [cozy]: https://cozy.io "Cozy Cloud"
 [agpl-3.0]: https://www.gnu.org/licenses/agpl-3.0.html
