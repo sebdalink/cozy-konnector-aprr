@@ -6,7 +6,7 @@
   "icon": "icon.png",
   "slug": "aprr",
   "source": "git://github.com/sebdalink/cozy-konnector-aprr.git",
-  "editor": "Cozy",
+  "editor": "sebdalink",
   "vendor_link": "http://www.aprr.fr/fr",
   "categories": ["transport"],
   "fields": {
@@ -24,7 +24,8 @@
     }
   },
   "data_types": [
-    "bill"
+    "bill",
+    "consumption"
   ],
   "screenshots": [],
   "permissions": {
@@ -33,6 +34,9 @@
     },
     "bills": {
       "type": "io.cozy.bills"
+    },
+    "APRR consumptions": {
+      "type": "io.cozy.aprr.consumptions"
     },
     "files": {
       "type": "io.cozy.files"
@@ -58,6 +62,9 @@
         "bills": {
           "description": "Utilisé pour sauver les données des factures"
         },
+        "APRR consumptions": {
+          "description": "Utilisé pour obtenir les consommations de télépéage"
+        },
         "files": {
           "description": "Utilisé pour sauvegarder les factures"
         },
@@ -67,14 +74,17 @@
       }
     },
     "en": {
-      "short_description": "Fetches your data from APRR toll system",
-      "long_description": "This connector fetches bills from APRR toll system",
+      "short_description": "Fetch your data from APRR toll system",
+      "long_description": "This connector fetches your bills from APRR toll system",
       "permissions": {
         "bank operations": {
           "description": "Required to link bank operations to bills"
         },
         "bills": {
           "description": "Required to save the bills data"
+        },
+        "APRR consumptions": {
+          "description": "Required to get toll consumptions"
         },
         "files": {
           "description": "Required to save the bills"
